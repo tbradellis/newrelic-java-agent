@@ -17,6 +17,13 @@ import java.util.logging.Level;
 
 public class SpringControllerUtility {
 
+    public static ThreadLocal<String> resourcePath = new ThreadLocal<String>() {
+        @Override
+        protected String initialValue() {
+            return "";
+        }
+    };
+
     public static String getPath(String rootPath, String methodPath, RequestMethod httpMethod) {
         StringBuilder fullPath = new StringBuilder();
         if (rootPath != null && !rootPath.isEmpty()) {
@@ -79,7 +86,16 @@ public class SpringControllerUtility {
         if (rootPath == null && methodPath == null) {
             AgentBridge.getAgent().getLogger().log(Level.FINE, "No path was specified for SpringController {0}", matchedAnnotationClass.getName());
         } else {
-            String fullPath = SpringControllerUtility.getPath(rootPath, methodPath, httpMethod);
+            String fullPath;
+            String placeholderValue = resourcePath.get();
+            if (SpringPlaceholderConfig.springPlaceholderValue == true) {
+                fullPath = SpringControllerUtility.getPath(rootPath, placeholderValue, httpMethod);
+
+            } else {
+                fullPath = SpringControllerUtility.getPath(rootPath, methodPath, httpMethod);
+
+            }
+
             transaction.setTransactionName(TransactionNamePriority.FRAMEWORK_HIGH, true, "SpringController",
                     fullPath);
         }
